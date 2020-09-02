@@ -10,6 +10,6 @@ export class DataService {
   constructor(private http: HttpClient) {}
 
     public getData() {
-      return this.http.get<Perinatal>('./assets/ga_perinatal_2000_2010.json');
+      return this.http.get<Perinatal[]>('./assets/ga_perinatal_2000_2010.json');
     }
 }

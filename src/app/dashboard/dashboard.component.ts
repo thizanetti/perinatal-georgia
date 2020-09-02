@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { DataService } from '../services/data.service';
+import { Perinatal } from '../classes/perinatal';
 
 @Component({
   selector: 'app-dashboard',
@@ -9,25 +10,52 @@ import { DataService } from '../services/data.service';
 })
 export class DashboardComponent implements OnInit {
   options: any;
+  perinatals: Array<Perinatal>;
 
   constructor(private readonly dataService: DataService) { }
 
   ngOnInit(): void {
-    this.dataService.getData().subscribe(res => console.log(JSON.stringify(res)));
+    this.dataService.getData().subscribe(
+      res => {
+        this.perinatals = res as Perinatal[];
+        this.processData()
+      }
+    );
+  }
 
-    const xAxisData = [];
-    const data1 = [];
-    const data2 = [];
+  processData(){
+    const hospitals = ['Northside Hospital', 'Emory Johns Creek', 'Dekalb', 'North Fulton', 'Atlanta Medical'];
+    const exclude_north_side = ['HOSP266','HOSP541', 'HOSP346'];
+    const subSetOfPerinatals = this.perinatals
+                               .filter(per => new RegExp(hospitals.join("|")).test(per.facility_name))
+                               .filter(per => !exclude_north_side.find(uid => uid == per.uid))
+    
+    const xAxisData = Array.from(new Set(subSetOfPerinatals.map(per => per.yr)))
+    let dic = {};
 
-    for (let i = 0; i < 100; i++) {
-      xAxisData.push('category' + i);
-      data1.push((Math.sin(i / 5) * (i / 5 - 10) + i / 6) * 5);
-      data2.push((Math.cos(i / 5) * (i / 5 - 10) + i / 6) * 5);
-    }
+    subSetOfPerinatals.forEach(per => {
+      if(!(per.uid in dic)){
+        dic[per.uid] = {
+          c_section_rates: new Array(),
+          name: per.facility_name
+        }
+      }
+      dic[per.uid].c_section_rates.push(Math.floor((per.c_sect / per.total_births)*100));
+    });
+
+    const series = new Array();
+    Object.keys(dic).forEach(per => {
+      series.push({
+        name: dic[per].name,
+        type: 'bar',
+        data: dic[per].c_section_rates,
+        animationDelay: (idx) => idx * 10,
+      });
+    })    
 
     this.options = {
       legend: {
-        data: ['bar', 'bar2'],
+        data: Object.keys(dic).map(per => dic[per].name),
         align: 'left',
       },
       tooltip: {},
@@ -39,20 +67,7 @@ export class DashboardComponent implements OnInit {
         },
       },
       yAxis: {},
-      series: [
-        {
-          name: 'bar',
-          type: 'bar',
-          data: data1,
-          animationDelay: (idx) => idx * 10,
-        },
-        {
-          name: 'bar2',
-          type: 'bar',
-          data: data2,
-          animationDelay: (idx) => idx * 10 + 100,
-        },
-      ],
+      series: series,
       animationEasing: 'elasticOut',
       animationDelayUpdate: (idx) => idx * 5,
     };
