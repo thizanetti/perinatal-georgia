@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import {DataService} from './services/data.service';
 
 @Component({
   selector: 'app-root',
@@ -7,11 +6,10 @@ import {DataService} from './services/data.service';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'perinatal-georgia-app';
+  title = 'perinatal georgia info';
   
-  constructor(private readonly dataService: DataService){}
+  constructor(){}
 
   public async ngOnInit() {
-    this.dataService.getData().subscribe(res => console.log(JSON.stringify(res)));
   }
 }
